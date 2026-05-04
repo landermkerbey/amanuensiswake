@@ -1,0 +1,98 @@
+#+TITLE: Deployment Guide — Amanuensis Wake
+
+#+NOTE: This file is public. All server addresses and usernames are intentional
+placeholders — do not commit real values. The rsync deploy method described here
+is interim scaffolding and will be replaced by a CI/CD pipeline in a
+later phase.
+
+* Server setup (run once as root or sudo user)
+
+** Install nginx
+
+#+BEGIN_SRC sh
+sudo apt update
+sudo apt install -y nginx
+#+END_SRC
+
+** Create the site user
+
+#+BEGIN_SRC sh
+sudo useradd --system --no-create-home --shell /usr/sbin/nologin amanuensiswake
+#+END_SRC
+
+** Create the deploy directory
+
+#+BEGIN_SRC sh
+sudo mkdir -p /var/www/amanuensiswake/dist
+sudo chown -R amanuensiswake:amanuensiswake /var/www/amanuensiswake
+sudo chmod -R 755 /var/www/amanuensiswake
+#+END_SRC
+
+** Allow your personal user to deploy
+
+Add your personal user to the =amanuensiswake= group so you can write to the
+deploy directory without sudo:
+
+#+BEGIN_SRC sh
+sudo usermod -aG amanuensiswake YOUR_USERNAME
+sudo chmod -R g+w /var/www/amanuensiswake
+#+END_SRC
+
+Log out and back in for the group change to take effect.
+
+** Enable the nginx site
+
+#+BEGIN_SRC sh
+sudo cp /path/to/repo/deploy/nginx.conf \
+    /etc/nginx/sites-available/amanuensiswake
+sudo ln -s /etc/nginx/sites-available/amanuensiswake \
+    /etc/nginx/sites-enabled/amanuensiswake
+sudo rm -f /etc/nginx/sites-enabled/default
+#+END_SRC
+
+** Test and reload nginx
+
+#+BEGIN_SRC sh
+sudo nginx -t
+sudo systemctl reload nginx
+#+END_SRC
+
+** Allow HTTP and HTTPS through the firewall
+
+#+BEGIN_SRC sh
+sudo ufw allow 'Nginx Full'
+sudo ufw enable
+#+END_SRC
+
+* Deploying the site
+
+Run this from your local machine after =npm run build=:
+
+#+BEGIN_SRC sh
+rsync -avz --delete dist/ \
+    amanuensiswake@YOUR_SERVER_IP:/var/www/amanuensiswake/dist/
+#+END_SRC
+
+Or if deploying as your personal user (after group setup above):
+
+#+BEGIN_SRC sh
+rsync -avz --delete dist/ \
+    YOUR_USERNAME@YOUR_SERVER_IP:/var/www/amanuensiswake/dist/
+#+END_SRC
+
+* Validating the deployment
+
+#+BEGIN_SRC sh
+curl -I http://amanuensiswake.com
+#+END_SRC
+
+Expected: =HTTP/1.1 200 OK=
+
+Check clean URLs work:
+
+#+BEGIN_SRC sh
+curl -I http://amanuensiswake.com/essays/on-silence
+#+END_SRC
+
+Expected: =HTTP/1.1 200 OK= (not 404, not 301)
+#+END_SRC
