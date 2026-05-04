@@ -25,7 +25,10 @@ export async function build(config: BuildConfig): Promise<void> {
       const html = baseTemplate({ title: parsed.title, body: parsed.bodyHtml });
 
       const stripped = relative.replace(/\.org$/, "");
-      const outputPath = path.join(outputDir, stripped, "index.html");
+      const isIndex = stripped === "index";
+      const outputPath = isIndex
+	? path.join(outputDir, "index.html")
+	: path.join(outputDir, stripped, "index.html");
 
       await mkdir(path.dirname(outputPath), { recursive: true });
       await writeFile(outputPath, html, "utf-8");

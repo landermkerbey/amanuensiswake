@@ -23,9 +23,9 @@ sudo useradd --system --no-create-home --shell /usr/sbin/nologin amanuensiswake
 ** Create the deploy directory
 
 #+BEGIN_SRC sh
-sudo mkdir -p /var/www/amanuensiswake/dist
-sudo chown -R amanuensiswake:amanuensiswake /var/www/amanuensiswake
-sudo chmod -R 755 /var/www/amanuensiswake
+  sudo mkdir -p /var/www/amanuensiswake/dist
+  sudo chown -R amanuensiswake:amanuensiswake /var/www/amanuensiswake
+  sudo chmod -R 775 /var/www/amanuensiswake
 #+END_SRC
 
 ** Allow your personal user to deploy
@@ -69,15 +69,15 @@ sudo ufw enable
 Run this from your local machine after =npm run build=:
 
 #+BEGIN_SRC sh
-rsync -avz --delete dist/ \
-    amanuensiswake@YOUR_SERVER_IP:/var/www/amanuensiswake/dist/
+  rsync -avz --no-group --delete dist/ \
+      amanuensiswake@YOUR_SERVER_IP:/var/www/amanuensiswake/dist/
 #+END_SRC
 
 Or if deploying as your personal user (after group setup above):
 
 #+BEGIN_SRC sh
-rsync -avz --delete dist/ \
-    YOUR_USERNAME@YOUR_SERVER_IP:/var/www/amanuensiswake/dist/
+  rsync -avz --no-group --delete dist/ \
+      YOUR_USERNAME@YOUR_SERVER_IP:/var/www/amanuensiswake/dist/
 #+END_SRC
 
 * Validating the deployment

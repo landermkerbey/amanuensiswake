@@ -79,4 +79,25 @@ describe("build", () => {
 
     expect(html).toContain("<h1>Ravens at My Desk</h1>");
   });
+
+  it("outputs index.org directly as index.html at the root", async () => {
+    const indexOrg = path.join(fixtureContent, "index.org");
+    await writeFile(
+      indexOrg,
+      "#+TITLE: Home\n\nWelcome.\n",
+      "utf-8"
+    );
+
+    await build({ contentDir: fixtureContent, outputDir });
+
+    const html = await readFile(
+      path.join(outputDir, "index.html"),
+      "utf-8"
+    );
+
+    expect(html).toContain("<h1>Home</h1>");
+
+    await rm(indexOrg);
+  });
+
 });
