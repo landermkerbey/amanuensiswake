@@ -32,3 +32,14 @@ export async function build(config: BuildConfig): Promise<void> {
     })
   );
 }
+
+const isMain = process.argv[1]?.endsWith("builder/index.ts") ||
+               process.argv[1]?.endsWith("builder/index.js");
+
+if (isMain) {
+  const contentDir = new URL("../../content", import.meta.url).pathname;
+  const outputDir = new URL("../../dist", import.meta.url).pathname;
+  console.log("building...");
+  await build({ contentDir, outputDir });
+  console.log("done");
+}
