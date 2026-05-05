@@ -80,6 +80,46 @@ Or if deploying as your personal user (after group setup above):
       YOUR_USERNAME@YOUR_SERVER_IP:/var/www/amanuensiswake/dist/
 #+END_SRC
 
+* Publishing new or updated content
+
+Content lives in the =amanuensiswake-content= submodule at =content/=. The code
+repository pins a specific commit SHA from the content repository, so code and
+content versions are always auditable together.
+
+** Workflow
+
+#+BEGIN_SRC sh
+# 1. In the content repo: commit and push your new or updated .org file
+cd content
+git add .
+git commit -m "feat: add <page-name>"
+git push
+
+# 2. Back in the code repo: advance the submodule pointer and push
+cd ..
+git submodule update --remote content
+git add content
+git commit -m "chore: update content submodule"
+git push
+
+# 3. On the server: pull the new submodule pointer, fetch content, and rebuild
+ssh YOUR_USERNAME@YOUR_SERVER_IP
+cd ~/amanuensiswake
+git pull
+git submodule update --recursive
+npm run build
+
+# 4. From your local machine: deploy the new build
+rsync -avz --no-group --delete dist/ \
+    YOUR_USERNAME@YOUR_SERVER_IP:/var/www/amanuensiswake/dist/
+#+END_SRC
+
+** Drafts
+
+Keep drafts on a local branch in the content repo. Only merge to =main= when
+ready to publish. Never push draft branches to the public remote — the content
+repository is public.
+
 * Validating the deployment
 
 #+BEGIN_SRC sh
@@ -95,4 +135,3 @@ curl -I http://amanuensiswake.com/essays/on-silence
 #+END_SRC
 
 Expected: =HTTP/1.1 200 OK= (not 404, not 301)
-#+END_SRC
