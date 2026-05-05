@@ -1,3 +1,5 @@
+# .gitmodules is intentionally tracked — do NOT add it here.
+
 node_modules/
 dist/
 *.js.map
