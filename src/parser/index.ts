@@ -9,6 +9,7 @@ export interface ParsedPage {
   date: string;
   tags: string[];
   bodyHtml: string;
+  rawContent: string;
 }
 
 function extractKeyword(content: string, keyword: string): string {
@@ -40,5 +41,5 @@ export async function parse(filePath: string): Promise<ParsedPage> {
   const file = await processor.process(content);
   const bodyHtml = String(file);
 
-  return { title, date, tags, bodyHtml };
+  return { title, date, tags, bodyHtml, rawContent: content };
 }
