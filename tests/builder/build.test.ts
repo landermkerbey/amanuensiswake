@@ -1,5 +1,6 @@
 import { describe, it, expect, beforeEach, afterEach } from "vitest";
 import { build } from "../../src/builder/index.js";
+import { parse } from "../../src/parser/index.js";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { mkdtemp, readFile, rm, writeFile, mkdir } from "node:fs/promises";
@@ -8,6 +9,7 @@ import { tmpdir } from "node:os";
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 const fixtureContent = path.resolve(__dirname, "../fixtures/content");
+const fixturesDir = path.resolve(__dirname, "../fixtures");
 
 let outputDir: string;
 
@@ -18,6 +20,8 @@ beforeEach(async () => {
 afterEach(async () => {
   await rm(outputDir, { recursive: true, force: true });
 });
+
+/* ─── existing build tests ────────────────────────────────────────────── */
 
 describe("build", () => {
   it("produces one HTML file per org source", async () => {
@@ -82,11 +86,7 @@ describe("build", () => {
 
   it("outputs index.org directly as index.html at the root", async () => {
     const indexOrg = path.join(fixtureContent, "index.org");
-    await writeFile(
-      indexOrg,
-      "#+TITLE: Home\n\nWelcome.\n",
-      "utf-8"
-    );
+    await writeFile(indexOrg, "#+TITLE: Home\n\nWelcome.\n", "utf-8");
 
     await build({ contentDir: fixtureContent, outputDir });
 
@@ -99,5 +99,98 @@ describe("build", () => {
 
     await rm(indexOrg);
   });
+});
 
+/* ─── Step 3: verse block ─────────────────────────────────────────────── */
+
+describe("verse block", () => {
+  it("wraps verse content in div.aw-verse", async () => {
+    const verseFixture = path.join(fixturesDir, "verse.org");
+
+    // Build a single-file content dir pointing at the fixture
+    const singleFileDir = path.join(outputDir, "verse-content");
+    await mkdir(singleFileDir, { recursive: true });
+    await writeFile(
+      path.join(singleFileDir, "verse.org"),
+      await readFile(verseFixture, "utf-8")
+    );
+
+    await build({ contentDir: singleFileDir, outputDir });
+
+    const html = await readFile(
+      path.join(outputDir, "verse", "index.html"),
+      "utf-8"
+    );
+
+    expect(html).toContain('class="aw-verse"');
+    expect(html).toContain("<div");
+    // The aw-verse wrapper must not be a <p>
+    expect(html).not.toMatch(/<p[^>]*class="verse"/);
+  });
+
+  it("preserves leading whitespace of indented verse lines verbatim", async () => {
+    const verseFixture = path.join(fixturesDir, "verse.org");
+
+    const singleFileDir = path.join(outputDir, "verse-ws-content");
+    await mkdir(singleFileDir, { recursive: true });
+    await writeFile(
+      path.join(singleFileDir, "verse.org"),
+      await readFile(verseFixture, "utf-8")
+    );
+
+    await build({ contentDir: singleFileDir, outputDir });
+
+    const html = await readFile(
+      path.join(outputDir, "verse", "index.html"),
+      "utf-8"
+    );
+
+    // The fixture has a line indented with two spaces and one with four.
+    // With white-space: pre in CSS the spaces must survive into the HTML.
+    expect(html).toContain("  and the word was with the page,");
+    expect(html).toContain("    and the page was blank.");
+  });
+});
+
+/* ─── Step 4: revisedDate parsing ────────────────────────────────────── */
+
+describe("parser: revisedDate", () => {
+  it("extracts #+LAST_MODIFIED as revisedDate when present and different from date", async () => {
+    const tmp = path.join(outputDir, "modified.org");
+    await writeFile(
+      tmp,
+      "#+TITLE: Test\n#+DATE: 2026-01-23\n#+LAST_MODIFIED: 2026-03-14\n\nBody.\n",
+      "utf-8"
+    );
+
+    const parsed = await parse(tmp);
+
+    expect(parsed.revisedDate).toBe("2026-03-14");
+  });
+
+  it("returns null for revisedDate when #+LAST_MODIFIED is absent", async () => {
+    const tmp = path.join(outputDir, "no-modified.org");
+    await writeFile(
+      tmp,
+      "#+TITLE: Test\n#+DATE: 2026-01-23\n\nBody.\n",
+      "utf-8"
+    );
+
+    const parsed = await parse(tmp);
+
+    expect(parsed.revisedDate).toBeNull();
+  });
+
+  it("returns null for revisedDate when #+LAST_MODIFIED equals #+DATE", async () => {
+    const tmp = path.join(outputDir, "same-date.org");
+    await writeFile(
+      tmp,
+      "#+TITLE: Test\n#+DATE: 2026-01-23\n#+LAST_MODIFIED: 2026-01-23\n\nBody.\n",
+      "utf-8"
+    );
+
+    const parsed = await parse(tmp);
+
+    expect(parsed.revisedDate).toBeNull();
+  });
 });

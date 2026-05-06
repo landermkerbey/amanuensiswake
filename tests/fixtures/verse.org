@@ -1,0 +1,12 @@
+#+TITLE: Verse Fixture
+#+DATE: 2026-01-01
+
+A short prose introduction.
+
+#+BEGIN_VERSE
+In the beginning was the word,
+  and the word was with the page,
+    and the page was blank.
+#+END_VERSE
+
+Back to prose.
