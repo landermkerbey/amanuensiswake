@@ -13,6 +13,12 @@ export interface TemplateData {
    * nothing here until then.
    */
   seriesBar?: string | null;
+  /**
+   * True for the home/index page.  Adjusts header size (1.35rem site
+   * name), omits the article wrapper / h1 / dateline / tags, and
+   * renders the body directly inside the column.
+   */
+  isHome?: boolean;
 }
 
 /* ─── helpers ─────────────────────────────────────────────────────────── */
@@ -46,7 +52,7 @@ function renderDateline(date?: string, revisedDate?: string | null): string {
 
 function renderTags(tags?: string[]): string {
   if (!tags || tags.length === 0) return "";
-  const items = tags.map((t) => `<li>${t}</li>`).join("\n      ");
+  const items = tags.map((t) => `<li class="aw-tag">${t}</li>`).join("\n      ");
   return `<ul class="aw-tags">\n      ${items}\n    </ul>`;
 }
 
@@ -83,33 +89,19 @@ export function baseTemplate({
   revisedDate,
   tags,
   seriesBar,
+  isHome = false,
 }: TemplateData): string {
   const dateline = renderDateline(date, revisedDate);
   const tagsHtml = renderTags(tags);
   const seriesBarHtml = renderSeriesBar(seriesBar);
+  const headerClass = isHome
+    ? "aw-site-header aw-site-header--home"
+    : "aw-site-header";
 
-  return `<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>${title} — amanuensiswake</title>
-  <link rel="stylesheet" href="/style.css">
-</head>
-<body>
-
-  <header class="aw-site-header">
-    <div class="aw-column aw-site-header__inner">
-      <a class="aw-site-name" href="/">amanuensiswake</a>
-      <span class="aw-byline">by Lander M. Kerbey</span>
-      ${renderNav()}
-    </div>
-  </header>
-
-  <main class="aw-main">
-    <div class="aw-column">
-
-      ${seriesBarHtml ? `<div class="aw-series-bar-top">${seriesBarHtml}</div>` : ""}
+  /* Main content differs between home and article pages */
+  const mainInner = isHome
+    ? body
+    : `${seriesBarHtml}
 
       <article>
         <header class="aw-article-header">
@@ -123,8 +115,31 @@ export function baseTemplate({
         </div>
       </article>
 
-      ${seriesBarHtml ? `<div class="aw-series-bar-bottom">${seriesBarHtml}</div>` : ""}
+      ${seriesBarHtml}`;
 
+  return `<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>${title} — amanuensiswake</title>
+  <link rel="stylesheet" href="/style.css">
+</head>
+<body>
+
+  <header class="${headerClass}">
+    <div class="aw-column aw-site-header__inner">
+      <div class="aw-site-id">
+        <a class="aw-site-name" href="/">amanuensiswake</a>
+        <p class="aw-byline">by Lander M. Kerbey</p>
+      </div>
+      ${renderNav()}
+    </div>
+  </header>
+
+  <main class="aw-main">
+    <div class="aw-column">
+      ${mainInner}
     </div>
   </main>
 

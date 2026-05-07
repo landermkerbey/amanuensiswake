@@ -95,7 +95,11 @@ describe("build", () => {
       "utf-8"
     );
 
-    expect(html).toContain("<h1>Home</h1>");
+    // Home page uses the isHome layout — no article <h1>, but the title
+    // appears in <title> and the index structure is present.
+    expect(html).toContain("Home — amanuensiswake");
+    expect(html).toContain("aw-site-header--home");
+    expect(html).toContain("aw-section-label");
 
     await rm(indexOrg);
   });

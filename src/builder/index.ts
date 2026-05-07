@@ -82,6 +82,7 @@ async function processIndex(
     title: parsed.title,
     body,
     date: parsed.date || undefined,
+    isHome: true,
   });
 
   await mkdir(path.dirname(outputPath), { recursive: true });

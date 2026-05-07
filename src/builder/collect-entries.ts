@@ -40,7 +40,8 @@ export async function collectEntries(contentDir: string): Promise<EntryMeta[]> {
         );
 
         const title = extractKeyword(content, "TITLE");
-        const date = extractKeyword(content, "DATE");
+        const rawDate = extractKeyword(content, "DATE");
+        const date = rawDate || extractKeyword(content, "CREATED");
         const rawTags = extractKeyword(content, "FILETAGS");
         const tags = rawTags ? extractTags(rawTags) : [];
 

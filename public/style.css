@@ -1,33 +1,28 @@
-@import url('https://fonts.googleapis.com/css2?family=Source+Serif+4:ital,opsz,wght@0,8..60,300..900;1,8..60,300..900&family=Noto+Serif+JP:wght@300..900&family=Noto+Serif+KR:wght@300..900&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Source+Serif+4:ital,opsz,wght@0,8..60,400;0,8..60,600;1,8..60,400;1,8..60,600&family=Noto+Serif+JP:wght@400;600&family=Noto+Serif+KR:wght@400;600&display=swap');
 
-/* ─── Colour & spacing tokens ──────────────────────────────────────────── */
+/* ─── Design tokens ──────────────────────────────────────────────────────── */
 
 :root {
-  --bg:        #F7F4EF;
-  --ink:       #2A2520;
-  --muted:     #7A7268;
-  --rule:      rgba(42, 37, 32, 0.10);
+  --aw-bg:        #F7F4EF;
+  --aw-ink:       #2A2520;
+  --aw-muted:     #7A7268;
+  --aw-rule:      rgba(42, 37, 32, 0.10);
+  --aw-note-bg:   rgba(42, 37, 32, 0.045);
+  --aw-note-rule: rgba(42, 37, 32, 0.22);
+  --aw-serif:     'Source Serif 4', 'Noto Serif JP', 'Noto Serif KR', Georgia, serif;
 
-  --col-width: 640px;
-  --col-pad:   clamp(1rem, 5vw, 2.5rem);
-
-  --size-base: 1.125rem;   /* 18px */
-  --lh-prose:  1.7;
-  --lh-tight:  1.3;
-
-  --space-xs:  0.25rem;
-  --space-sm:  0.5rem;
-  --space-md:  1rem;
-  --space-lg:  2rem;
-  --space-xl:  3.5rem;
+  --aw-col-width: 640px;
+  --aw-col-pad:   1rem;
 }
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --bg:   #1C1917;
-    --ink:  #E8E3DA;
-    --muted: #8C8479;
-    --rule: rgba(232, 227, 218, 0.12);
+    --aw-bg:        #1C1A17;
+    --aw-ink:       #EDE8E0;
+    --aw-muted:     #9A9186;
+    --aw-rule:      rgba(237, 232, 224, 0.10);
+    --aw-note-bg:   rgba(237, 232, 224, 0.05);
+    --aw-note-rule: rgba(237, 232, 224, 0.25);
   }
 }
 
@@ -42,23 +37,18 @@
 /* ─── Base ──────────────────────────────────────────────────────────────── */
 
 html {
-  font-size: var(--size-base);
   -webkit-text-size-adjust: 100%;
   text-size-adjust: 100%;
   scroll-behavior: smooth;
 }
 
 body {
-  background-color: var(--bg);
-  color: var(--ink);
-  font-family:
-    'Source Serif 4',
-    'Noto Serif JP',
-    'Noto Serif KR',
-    Georgia,
-    serif;
+  background-color: var(--aw-bg);
+  color: var(--aw-ink);
+  font-family: var(--aw-serif);
   font-optical-sizing: auto;
-  line-height: var(--lh-prose);
+  font-size: 1.05rem;
+  line-height: 1.8;
   min-height: 100dvh;
   display: flex;
   flex-direction: column;
@@ -68,44 +58,46 @@ body {
 
 .aw-column {
   width: 100%;
-  max-width: var(--col-width);
+  max-width: var(--aw-col-width);
   margin-inline: auto;
-  padding-inline: var(--col-pad);
+  padding-inline: var(--aw-col-pad);
 }
 
 /* ─── Typography ────────────────────────────────────────────────────────── */
 
 p {
-  margin-block-end: var(--space-md);
+  margin-block-end: 1.4rem;
 }
 
 h1, h2, h3, h4 {
-  line-height: var(--lh-tight);
-  color: var(--ink);
+  color: var(--aw-ink);
 }
 
-/* h1 — article/page title; rendered by template, not org body */
+/* h1 — article title; rendered by template, not org body */
 h1 {
-  font-size: 2rem;
-  font-weight: 700;
-  letter-spacing: -0.02em;
-  margin-block-end: var(--space-sm);
+  font-size: 1.6rem;
+  font-weight: 600;
+  line-height: 1.25;
+  letter-spacing: -0.015em;
 }
 
-/* h2 — Part (bold roman, numbered: "Part II — Title") */
+/* h2 — Part (roman, numbered: "Part II — Title") */
 h2 {
-  font-size: 1.4rem;
-  font-weight: 700;
-  margin-block-start: var(--space-xl);
-  margin-block-end: var(--space-md);
+  font-size: 1.2rem;
+  font-weight: 600;
+  line-height: 1.3;
+  letter-spacing: -0.01em;
+  margin-block-start: 2.5rem;
+  margin-block-end: 1rem;
 }
 
-/* h3 — Chapter (medium roman, numbered: "3. Title") */
+/* h3 — Chapter (roman, numbered: "3. Title") */
 h3 {
-  font-size: 1.2rem;
-  font-weight: 500;
-  margin-block-start: var(--space-lg);
-  margin-block-end: var(--space-sm);
+  font-size: 1rem;
+  font-weight: 600;
+  line-height: 1.4;
+  margin-block-start: 2rem;
+  margin-block-end: 0.5rem;
 }
 
 /* h4 — Scene (unbolded italic, no number) */
@@ -113,8 +105,9 @@ h4 {
   font-size: 1rem;
   font-weight: 400;
   font-style: italic;
-  margin-block-start: var(--space-lg);
-  margin-block-end: var(--space-sm);
+  line-height: 1.4;
+  margin-block-start: 2rem;
+  margin-block-end: 0.5rem;
 }
 
 em {
@@ -122,98 +115,113 @@ em {
 }
 
 strong {
-  font-weight: 700;
+  font-weight: 600;
 }
 
 a {
-  color: var(--ink);
+  color: var(--aw-ink);
   text-underline-offset: 0.2em;
 }
 
 a:hover {
-  color: var(--muted);
+  color: var(--aw-muted);
 }
 
-hr {
+hr,
+.aw-rule-el {
   border: none;
-  border-top: 1px solid var(--rule);
-  margin-block: var(--space-xl);
+  border-top: 0.5px solid var(--aw-rule);
+  margin-block: 3.5rem;
 }
 
 /* ─── Site header ───────────────────────────────────────────────────────── */
 
 .aw-site-header {
-  padding-block: var(--space-lg);
-  border-bottom: 1px solid var(--rule);
-  margin-block-end: var(--space-xl);
+  padding-top: 2.25rem;
+  padding-bottom: 1.25rem;
+  border-bottom: 0.5px solid var(--aw-rule);
+  margin-block-end: 2.5rem;   /* article pages */
+}
+
+.aw-site-header--home {
+  margin-block-end: 2rem;     /* home page */
 }
 
 .aw-site-header__inner {
   display: flex;
-  align-items: baseline;
-  gap: var(--space-lg);
-  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+/* Site name + byline stacked on the left */
+.aw-site-id {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
 }
 
 .aw-site-name {
-  font-size: 1rem;
+  font-size: 1.1rem;       /* article pages */
   font-weight: 600;
+  line-height: 1.2;
+  font-optical-sizing: auto;
   text-decoration: none;
-  letter-spacing: 0.01em;
+}
+
+.aw-site-header--home .aw-site-name {
+  font-size: 1.35rem;      /* home page */
 }
 
 .aw-byline {
-  font-size: 0.875rem;
-  color: var(--muted);
+  font-size: 0.78rem;
+  color: var(--aw-muted);
   font-style: italic;
 }
 
 /* ─── Nav ───────────────────────────────────────────────────────────────── */
 
-.aw-nav {
-  margin-inline-start: auto;
-}
-
 .aw-nav__list {
   list-style: none;
   display: flex;
-  gap: var(--space-md);
+  gap: 1rem;
   font-size: 0.875rem;
 }
 
 .aw-nav__list a {
   text-decoration: none;
-  color: var(--muted);
+  color: var(--aw-muted);
 }
 
 .aw-nav__list a:hover {
-  color: var(--ink);
+  color: var(--aw-ink);
 }
 
 .aw-nav__list a[aria-current="page"] {
-  color: var(--ink);
+  color: var(--aw-ink);
+  border-bottom: 1px solid var(--aw-ink);
 }
 
 /* ─── Main content area ─────────────────────────────────────────────────── */
 
 .aw-main {
   flex: 1;
-  padding-block-end: var(--space-xl);
 }
 
 /* ─── Article header ────────────────────────────────────────────────────── */
 
 .aw-article-header {
-  margin-block-end: var(--space-lg);
+  margin-block-end: 2rem;
 }
 
 /* ─── Dateline ──────────────────────────────────────────────────────────── */
 
 .aw-dateline {
-  font-size: 0.875rem;
-  color: var(--muted);
-  margin-block-start: var(--space-sm);
-  margin-block-end: var(--space-sm);
+  font-size: 0.8rem;
+  font-style: italic;
+  color: var(--aw-muted);
+  margin-block-start: 0.5rem;
+  margin-block-end: 0.5rem;
 }
 
 /* ─── Tags ──────────────────────────────────────────────────────────────── */
@@ -222,14 +230,26 @@ hr {
   list-style: none;
   display: flex;
   flex-wrap: wrap;
-  gap: var(--space-xs) var(--space-sm);
-  margin-block-start: var(--space-sm);
-  font-size: 0.8125rem;
-  color: var(--muted);
+  gap: 0.25rem 0.4rem;
+  margin-block-start: 0.5rem;
 }
 
-.aw-tags li::before {
-  content: '#';
+/* Pill shape — applies to both article tags (<li>) and index tags (.aw-tag) */
+.aw-tags li,
+.aw-tag {
+  font-size: 0.7rem;
+  letter-spacing: 0.02em;
+  color: var(--aw-muted);
+  background: rgba(42, 37, 32, 0.055);
+  padding: 2px 7px;
+  border-radius: 3px;
+}
+
+@media (prefers-color-scheme: dark) {
+  .aw-tags li,
+  .aw-tag {
+    background: rgba(237, 232, 224, 0.08);
+  }
 }
 
 /* ─── Series nav bar ────────────────────────────────────────────────────── */
@@ -238,90 +258,199 @@ hr {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  font-size: 0.875rem;
-  color: var(--muted);
-  padding-block: var(--space-sm);
-  border-block: 1px solid var(--rule);
-  margin-block: var(--space-lg);
+  font-size: 0.8rem;
+  font-style: italic;
+  color: var(--aw-muted);
+  padding: 0.6rem 0.9rem;
+  border: 0.5px solid var(--aw-rule);
+  background: rgba(42, 37, 32, 0.025);
+  margin-block: 2rem;
 }
 
-.aw-series-bar__name {
+.aw-series-label {
   text-align: center;
   flex: 1;
-  padding-inline: var(--space-sm);
-  font-style: italic;
+  padding-inline: 0.5rem;
+  font-size: 0.72rem;
+  font-style: normal;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--aw-muted);
 }
 
 .aw-series-bar a {
-  color: var(--muted);
+  color: var(--aw-muted);
   text-decoration: none;
 }
 
 .aw-series-bar a:hover {
-  color: var(--ink);
+  color: var(--aw-ink);
 }
 
 /* ─── Prose body ────────────────────────────────────────────────────────── */
 
-.aw-prose {
-  max-width: 100%;
-}
-
-.aw-prose > * + * {
-  margin-block-start: var(--space-md);
-}
+/* No .aw-prose > * + * — spacing handled by element-specific margins above */
 
 /* ─── Verse block ───────────────────────────────────────────────────────── */
 
 .aw-verse {
   white-space: pre;
   overflow-x: auto;
-  font-family:
-    'Source Serif 4',
-    'Noto Serif JP',
-    'Noto Serif KR',
-    Georgia,
-    serif;
+  font-family: var(--aw-serif);
   font-optical-sizing: auto;
-  line-height: var(--lh-prose);
-  margin-block: var(--space-md);
+  font-size: 1rem;
+  line-height: 1.9;
+  margin-block: 1.4rem;
 }
 
-/* ─── Notes block (home page) ───────────────────────────────────────────── */
+/* ─── Home page: lede ───────────────────────────────────────────────────── */
+
+.aw-lede {
+  max-width: 560px;
+  line-height: 1.8;
+}
+
+.aw-lede p:last-child {
+  margin-block-end: 0;
+}
+
+/* ─── Home page: section label ──────────────────────────────────────────── */
+
+.aw-section-label {
+  font-size: 0.7rem;
+  font-weight: 400;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--aw-muted);
+  border-bottom: 0.5px solid var(--aw-rule);
+  padding-bottom: 0.5rem;
+  margin-top: 2rem;
+  margin-bottom: 1.25rem;
+}
+
+/* ─── Home page: entry list ─────────────────────────────────────────────── */
+
+.aw-entry {
+  display: grid;
+  grid-template-columns: 5rem 1fr;
+  column-gap: 1rem;
+  align-items: start;
+  margin-block-end: 1.6rem;
+}
+
+.aw-entry-meta {
+  font-size: 0.78rem;
+  font-style: italic;
+  color: var(--aw-muted);
+  text-align: right;
+  line-height: 1.6;
+  padding-top: 0.1rem;   /* optical alignment with entry title cap-height */
+}
+
+.aw-entry-title {
+  display: block;
+  font-size: 1.05rem;
+  font-weight: 600;
+  line-height: 1.35;
+  text-decoration: none;
+  color: var(--aw-ink);
+}
+
+.aw-entry-title:hover {
+  color: var(--aw-muted);
+}
+
+.aw-entry-desc {
+  font-size: 0.875rem;
+  font-style: italic;
+  line-height: 1.6;
+  color: var(--aw-muted);
+  margin-top: 0.25rem;
+  margin-block-end: 0;
+}
+
+.aw-entry-body .aw-tags {
+  margin-top: 0.4rem;
+}
+
+/* ─── Home page: notes block ────────────────────────────────────────────── */
 
 .aw-notes-block {
-  border-left: 3px solid var(--rule);
-  padding-inline-start: var(--space-md);
-  margin-block-start: var(--space-xl);
-  background-color: color-mix(in srgb, var(--bg) 92%, var(--ink) 8%);
-  padding-block: var(--space-md);
+  border-left: 2px solid var(--aw-note-rule);
+  background-color: var(--aw-note-bg);
+  padding: 1.1rem 1.25rem;
+  margin-block-start: 2.5rem;
 }
 
-.aw-notes-block__heading {
-  font-size: 0.8125rem;
-  font-weight: 600;
-  letter-spacing: 0.05em;
+.aw-note-head {
+  font-size: 0.7rem;
+  font-weight: 400;
   text-transform: uppercase;
-  color: var(--muted);
-  margin-block-end: var(--space-md);
+  letter-spacing: 0.1em;
+  color: var(--aw-muted);
+  margin-block-end: 0.5rem;
+}
+
+.aw-note-subhead {
+  font-size: 0.8rem;
+  font-style: italic;
+  line-height: 1.5;
+  color: var(--aw-muted);
+  margin-block-end: 1rem;
+}
+
+.aw-note-item {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 1rem;
+  padding-block: 0.4rem;
+  border-bottom: 0.5px solid var(--aw-rule);
+}
+
+.aw-note-item:last-child {
+  border-bottom: none;
+  padding-block-end: 0;
+}
+
+.aw-note-item-title {
+  font-size: 0.875rem;
+  font-style: italic;
+  text-decoration: none;
+  color: var(--aw-ink);
+}
+
+.aw-note-item-title:hover {
+  color: var(--aw-muted);
+}
+
+.aw-note-item-date {
+  font-size: 0.75rem;
+  color: var(--aw-muted);
+  white-space: nowrap;
+  flex-shrink: 0;
 }
 
 /* ─── Footer ────────────────────────────────────────────────────────────── */
 
 .aw-footer {
-  padding-block: var(--space-lg);
-  border-top: 1px solid var(--rule);
+  margin-top: 3.5rem;
+  padding-top: 1.5rem;
+  border-top: 0.5px solid var(--aw-rule);
   text-align: center;
-  font-size: 0.875rem;
-  color: var(--muted);
-  font-style: italic;
 }
 
 .aw-footer a {
-  color: var(--muted);
+  font-size: 0.85rem;
+  font-style: italic;
+  letter-spacing: 0.01em;
+  color: var(--aw-muted);
   text-decoration: none;
+  /* bottom padding so the footer link itself has breathing room */
+  display: inline-block;
+  padding-bottom: 1.5rem;
 }
 
 .aw-footer a:hover {
-  color: var(--ink);
+  color: var(--aw-ink);
 }
