@@ -99,6 +99,91 @@ describe("build", () => {
 
     await rm(indexOrg);
   });
+
+  // ── Index generation ───────────────────────────────────────────────────
+
+  describe("build — index generation", () => {
+    let contentDir: string;
+
+    beforeEach(async () => {
+      contentDir = await mkdtemp(path.join(tmpdir(), "aw-index-content-"));
+      // Every index test needs an index.org to exist
+      await writeFile(
+	path.join(contentDir, "index.org"),
+	"#+TITLE: Amanuensis Wake\n#+DATE: 2026-05-04\n\n* Welcome\n\nA site for writing.\n"
+      );
+    });
+
+    afterEach(async () => {
+      await rm(contentDir, { recursive: true, force: true });
+    });
+
+    it("renders a writing entry as a link in the index", async () => {
+      await writeFile(
+	path.join(contentDir, "2026-03-15.org"),
+	`#+TITLE: On Clarity\n#+DATE: 2026-03-15\n#+FILETAGS: :essay:\n\nBody.\n`
+      );
+
+      await build({ contentDir, outputDir });
+
+      const html = await readFile(path.join(outputDir, "index.html"), "utf-8");
+      expect(html).toContain('href="/2026-03-15/"');
+      expect(html).toContain("On Clarity");
+    });
+
+    it("renders notes in a separate section from writings", async () => {
+      await writeFile(
+	path.join(contentDir, "2026-03-15.org"),
+	`#+TITLE: On Clarity\n#+DATE: 2026-03-15\n#+FILETAGS: :essay:\n\nBody.\n`
+      );
+      await writeFile(
+	path.join(contentDir, "2026-04-01.org"),
+	`#+TITLE: An open question\n#+DATE: 2026-04-01\n#+FILETAGS: :note:\n\nBody.\n`
+      );
+
+      await build({ contentDir, outputDir });
+
+      const html = await readFile(path.join(outputDir, "index.html"), "utf-8");
+      const writingsPos = html.indexOf("On Clarity");
+      const notesPos = html.indexOf("An open question");
+      const notesSectionPos = html.indexOf("aw-notes-block");
+
+      // Notes section exists and appears after the writings
+      expect(notesSectionPos).toBeGreaterThan(-1);
+      expect(writingsPos).toBeLessThan(notesSectionPos);
+      expect(notesPos).toBeGreaterThan(notesSectionPos);
+    });
+
+    it("omits the notes section when there are no notes", async () => {
+      await writeFile(
+	path.join(contentDir, "2026-03-15.org"),
+	`#+TITLE: On Clarity\n#+DATE: 2026-03-15\n#+FILETAGS: :essay:\n\nBody.\n`
+      );
+
+      await build({ contentDir, outputDir });
+
+      const html = await readFile(path.join(outputDir, "index.html"), "utf-8");
+      expect(html).not.toContain("aw-notes-block");
+    });
+
+    it("renders entries in reverse-chronological order", async () => {
+      await writeFile(
+	path.join(contentDir, "2025-11-20.org"),
+	`#+TITLE: Three Studies\n#+DATE: 2025-11-20\n#+FILETAGS: :fiction:\n\nBody.\n`
+      );
+      await writeFile(
+	path.join(contentDir, "2026-03-15.org"),
+	`#+TITLE: On Clarity\n#+DATE: 2026-03-15\n#+FILETAGS: :essay:\n\nBody.\n`
+      );
+
+      await build({ contentDir, outputDir });
+
+      const html = await readFile(path.join(outputDir, "index.html"), "utf-8");
+      expect(html.indexOf("On Clarity")).toBeLessThan(
+	html.indexOf("Three Studies")
+      );
+    });
+  });
 });
 
 /* ─── Step 3: verse block ─────────────────────────────────────────────── */
@@ -194,3 +279,4 @@ describe("parser: revisedDate", () => {
     expect(parsed.revisedDate).toBeNull();
   });
 });
+

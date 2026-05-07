@@ -9,6 +9,9 @@ import glob from "fast-glob";
 import path from "node:path";
 import { mkdir, writeFile, copyFile, readdir } from "node:fs/promises";
 import type { Transform, OrgData, BuildContext } from "../transforms/types.js";
+import { collectEntries, type EntryMeta } from "./collect-entries.js";
+import { indexTemplate } from "../../templates/index-template.js";
+
 
 export interface BuildConfig {
   contentDir: string;
@@ -63,6 +66,28 @@ async function processFile(
   await writeFile(outputPath, html, "utf-8");
 }
 
+async function processIndex(
+  absoluteInput: string,
+  outputPath: string,
+  entries: EntryMeta[]
+): Promise<void> {
+  const parsed = await parse(absoluteInput);
+
+  // Render the lede from the org body (the "Welcome" section content).
+  const ledeHtml = parsed.bodyHtml;
+
+  const body = indexTemplate(ledeHtml, entries);
+
+  const html = baseTemplate({
+    title: parsed.title,
+    body,
+    date: parsed.date || undefined,
+  });
+
+  await mkdir(path.dirname(outputPath), { recursive: true });
+  await writeFile(outputPath, html, "utf-8");
+}
+
 /**
  * Recursively copies every file under srcDir into destDir,
  * preserving the relative directory structure.
@@ -100,19 +125,27 @@ export async function build(config: BuildConfig): Promise<void> {
     absolute: false,
   });
 
+  // Collect entry metadata for the index page before processing files.
+  const entries = await collectEntries(contentDir);
+
   await Promise.all([
-    // Process all org files.
     ...orgFiles.map(async (relative) => {
       const absoluteInput = path.join(contentDir, relative);
       const stripped = relative.replace(/\.org$/, "");
       const isIndex = stripped === "index";
-      const outputPath = isIndex
-        ? path.join(outputDir, "index.html")
-        : path.join(outputDir, stripped, "index.html");
+      const outputPath = path.join(outputDir, "index.html");
 
-      await processFile(absoluteInput, outputPath, transforms);
+      if (isIndex) {
+        await processIndex(absoluteInput, outputPath, entries);
+      } else {
+        const articleOutputPath = path.join(
+          outputDir,
+          stripped,
+          "index.html"
+        );
+        await processFile(absoluteInput, articleOutputPath, transforms);
+      }
     }),
-    // Copy static assets (no-op when publicDir is absent).
     ...(publicDir ? [copyStatic(publicDir, outputDir)] : []),
   ]);
 }

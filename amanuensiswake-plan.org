@@ -1,0 +1,330 @@
+#+TITLE: Amanuensis Wake — Implementation Plan
+#+AUTHOR: (your name)
+#+DATE: 2026-05-05
+#+PROPERTY: session amanuensiswake
+#+STARTUP: overview
+
+* Context for AI sessions
+
+This document is the canonical plan for building the Amanuensis Wake personal
+writing website. Pass it at the start of any AI session to establish context.
+
+** Project summary
+
+- *Site title*: Amanuensis Wake
+- *Domain*: amanuensiswake.com
+- *Code repository*: =amanuensiswake= (public GitHub repo)
+- *Content repository*: =amanuensiswake-content= (separate public repo, TBD)
+- *Stack*: TypeScript static site generator, nginx on Digital Ocean VPS (Ubuntu 24.04)
+- *Authoring format*: Emacs Org-mode (=.org= files)
+- *Domain registrar*: Hover (DNS A record points to VPS IP)
+- *Development methodology*: TDD — smallest working chunks, failing tests first
+
+** Key constraints
+
+1. No Haskell. The SSG is TypeScript-native.
+2. Org-mode is the *only* authoring format.
+3. The engine supports AST-level transforms for future features (backlinks,
+   sidenotes, transclusion, etc.).
+4. Content lives in a separate public repository, connected as a git submodule.
+   Publication is controlled by what is committed and pushed to that repo.
+5. Cloudflare integration is deferred until the site is otherwise functional.
+
+** Technology decisions (confirmed)
+
+| Concern          | Choice                                     |
+|------------------+--------------------------------------------|
+| Language         | TypeScript                                 |
+| Test runner      | vitest                                     |
+| TS runner        | tsx                                        |
+| Org parser       | uniorg (unified.js-compatible)             |
+| File watching    | chokidar v3                                |
+| Server           | nginx                                      |
+| DNS              | Hover → VPS A record (Cloudflare later)    |
+
+** Current codebase structure
+
+#+BEGIN_EXAMPLE
+amanuensiswake/
+├── src/
+│   ├── parser/index.ts       ← parse() — returns title, date, tags, bodyHtml, rawContent
+│   ├── builder/index.ts      ← build({ contentDir, outputDir, transforms? })
+│   ├── transforms/
+│   │   ├── types.ts          ← Transform, BuildContext, OrgData, visitNodes
+│   │   └── index.ts          ← public re-exports (empty of built-ins for now)
+│   ├── server/
+│   │   ├── watch.ts          ← startWatcher({ contentDir, outputDir })
+│   │   └── serve.ts          ← createServer(distDir, port)
+│   └── dev.ts                ← entry point for `npm run dev`
+├── content/                  ← currently a plain subdirectory; to become a submodule
+├── dist/                     ← build output, gitignored
+├── templates/base.ts         ← baseTemplate({ title, body }) → HTML string
+├── deploy/
+│   ├── nginx.conf            ← symlinked from /etc/nginx/sites-available/
+│   └── README.org            ← deploy and server setup instructions
+├── tests/
+│   ├── smoke.test.ts
+│   ├── fixtures/             ← .org fixture files
+│   ├── parser/parse.test.ts
+│   ├── builder/build.test.ts
+│   ├── server/watch.test.ts
+│   └── transforms/pipeline.test.ts
+├── package.json              ← type: module, scripts: test/dev/build/typecheck
+├── tsconfig.json
+└── vitest.config.ts
+#+END_EXAMPLE
+
+** Known behaviours and gotchas
+
+- =index.org= in =content/= is treated as a special case and outputs to
+  =dist/index.html= (not =dist/index/index.html=).
+- Content before any heading in an org file sits directly on the =org-data= AST
+  node. Content under a heading is wrapped in a =section= node. Transforms must
+  account for both.
+- The uniorg AST type is imported directly from the =uniorg= package. Do not
+  redefine =OrgData= locally — it will drift from the library type.
+- chokidar must be pinned to v3. v4 and v5 have breaking API changes and do not
+  fire events reliably in test environments.
+- The deploy user is =lander=, who is a member of the =amanuensiswake= group.
+  The deploy directory =/var/www/amanuensiswake/dist= must have =g+w= set for
+  rsync to succeed.
+- rsync deploy command: =rsync -avz --no-group --delete dist/ lander@SERVER_IP:/var/www/amanuensiswake/dist/=
+
+* Phase 0 — Repository and tooling bootstrap
+:PROPERTIES:
+:STATUS: complete
+:END:
+
+TypeScript project with vitest, esbuild, tsx, and @types/node. Smoke test
+passes. =tsc --noEmit= exits clean.
+
+* Phase 1 — Org-file parsing
+:PROPERTIES:
+:STATUS: complete
+:END:
+
+=parse(filePath)= returns =title=, =date=, =tags=, =bodyHtml=, =rawContent=.
+Five passing tests covering title, date, tags, HTML body, and missing-file error.
+
+* Phase 2 — Minimal build pipeline
+:PROPERTIES:
+:STATUS: complete
+:END:
+
+=build({ contentDir, outputDir, transforms? })= globs =**/*.org=, parses each,
+applies transforms, wraps in =baseTemplate=, writes to =dist/=. Six passing
+tests including subdirectory preservation, =index.org= special case, non-org
+file exclusion, and idempotency.
+
+* Phase 3 — Dev server and watch mode
+:PROPERTIES:
+:STATUS: complete
+:END:
+
+=startWatcher({ contentDir, outputDir })= uses chokidar v3 to watch =**/*.org=
+and rebuild on add/change/unlink. =createServer(distDir, port)= serves =dist/=
+with clean URL resolution. Three passing watcher tests using polling helpers
+rather than fixed timeouts.
+
+* Phase 4 — nginx configuration
+:PROPERTIES:
+:STATUS: complete
+:END:
+
+=deploy/nginx.conf= serves =/var/www/amanuensiswake/dist= with clean URLs,
+gzip, and security headers. Symlinked into =/etc/nginx/sites-available/=.
+=deploy/README.org= documents server setup. TLS deferred to Cloudflare phase.
+
+* Phase 5 — DNS wiring
+:PROPERTIES:
+:STATUS: complete
+:END:
+
+Hover A record points apex and www to VPS IP. =curl -I http://amanuensiswake.com=
+returns =HTTP/1.1 200 OK=. Site is live and serving the placeholder index page.
+
+* Phase 6 — Transform pipeline
+:PROPERTIES:
+:STATUS: complete
+:END:
+
+=BuildConfig= accepts =transforms?: Transform[]=. Each transform receives the
+uniorg =OrgData= AST and a =BuildContext= (filePath, title, date, tags) and
+returns the (possibly mutated) AST. Transforms are applied in order between
+parse and render. =visitNodes= utility provided for recursive AST walking. Four
+passing tests: no-op, mutation, context capture, and ordering.
+
+* Phase 7 — Content repository separation
+:PROPERTIES:
+:STATUS: next
+:END:
+
+** Goal
+
+Move =content/= out of the code repository and into a standalone public git
+repository (=amanuensiswake-content=), connected to the code repository as a
+git submodule. Publishing a piece of writing means committing it to the content
+repo and pushing — nothing else changes in the build or deploy pipeline.
+
+** Design decisions
+
+- The content repo is *public* but publication is controlled by what you choose
+  to commit and push. Drafts stay local or on a private branch.
+- The submodule is pinned to a specific commit in the code repo. A content
+  update requires a deliberate =git submodule update= + commit in the code repo,
+  making the relationship between code and content explicit and auditable.
+- The deploy pipeline on the server will need to run =git submodule update
+  --remote= before building, so the server always pulls the latest pinned
+  content.
+
+** Tasks
+
+*** Step 1 — Create the content repository
+
+On GitHub, create a new public repository named =amanuensiswake-content=.
+Leave it completely empty — no README, no .gitignore.
+
+*** Step 2 — Initialise the content repo locally
+
+#+BEGIN_SRC sh
+cd /tmp
+git init amanuensiswake-content
+cd amanuensiswake-content
+git remote add origin git@github.com:YOUR_USERNAME/amanuensiswake-content.git
+#+END_SRC
+
+*** Step 3 — Move existing content into the new repo
+
+#+BEGIN_SRC sh
+cp -r ~/git/amanuensiswake/content/* /tmp/amanuensiswake-content/
+cd /tmp/amanuensiswake-content
+git add .
+git commit -m "feat: initial content — placeholder index"
+git push -u origin main
+#+END_SRC
+
+*** Step 4 — Remove content/ from the code repo and add as submodule
+
+#+BEGIN_SRC sh
+cd ~/git/amanuensiswake
+git rm -r content/
+git commit -m "chore: remove content directory ahead of submodule migration"
+
+git submodule add git@github.com:YOUR_USERNAME/amanuensiswake-content.git content
+git commit -m "chore: add amanuensiswake-content as git submodule at content/"
+#+END_SRC
+
+*** Step 5 — Verify the submodule works locally
+
+#+BEGIN_SRC sh
+npm run build
+#+END_SRC
+
+Confirm =dist/index.html= is produced correctly. The build pipeline requires no
+changes — =contentDir= still resolves to =content/=.
+
+*** Step 6 — Update the server clone
+
+SSH into the VPS and update the existing clone:
+
+#+BEGIN_SRC sh
+cd ~/amanuensiswake
+git pull
+git submodule update --init --recursive
+#+END_SRC
+
+Confirm =content/index.org= is present on the server.
+
+*** Step 7 — Update deploy/README.org
+
+Add a section documenting the submodule-aware content update workflow:
+
+#+BEGIN_EXAMPLE
+To publish new or updated content:
+1. Commit and push to amanuensiswake-content
+2. In the code repo: git submodule update --remote content
+3. git add content && git commit -m "chore: update content submodule"
+4. git push
+5. On the server: git pull && git submodule update --recursive
+6. npm run build
+7. rsync -avz --no-group --delete dist/ USER@SERVER:/var/www/amanuensiswake/dist/
+#+END_EXAMPLE
+
+*** Step 8 — Confirm .gitmodules is tracked
+
+Confirm =.gitmodules= is *not* in =.gitignore= — it must be tracked by the code
+repo. Add a comment near the top of =.gitignore= noting this explicitly.
+
+** Test targets
+
+No automated tests for this phase — it is a repository restructuring. Manual
+validation:
+
+- =npm run build= succeeds locally after submodule is added
+- =dist/index.html= contains the expected content
+- On the server, =git submodule update --init --recursive= populates =content/=
+- A new =.org= file committed and pushed to the content repo, then the submodule
+  updated and built, results in that page appearing after deploy
+
+** Notes
+
+- For drafts, use a local-only branch in the content repo. Only merge to =main=
+  when ready to publish. Never push draft branches to the public remote.
+- The submodule pointer in the code repo is a specific commit SHA. The code repo
+  always knows exactly which version of content it was built against.
+- Do not add =content/= to =.gitignore= in the code repo. After =git submodule
+  add=, git tracks it as a submodule reference, not a plain directory.
+
+* Deferred features (post-Phase 7)
+:PROPERTIES:
+:STATUS: deferred
+:END:
+
+** Syntax highlighting
+
+Add =rehype-highlight= or =shiki= to the pipeline for code blocks. Implement as
+a transform. Low complexity, high payoff — good warm-up for the transform system.
+
+** Sidenotes
+
+Convert Org footnotes (=[fn:1: text]= syntax) to margin notes in the rendered
+HTML. Requires a sidenote-aware CSS layout and a transform that restructures
+footnote AST nodes into sidenote HTML. Tufte CSS is a useful reference for the
+layout approach.
+
+** Backlinks
+
+Collect all internal wiki-style links during a first build pass into a global
+index. On a second pass, inject backlink sections into pages that are linked-to.
+Requires a two-pass build and a persistent link index data structure.
+
+** RSS feed
+
+Emit =dist/feed.xml= from pages tagged =:published:= (or similar) that have a
+=#+DATE=. Implement as a post-build step rather than a transform.
+
+** Cloudflare integration
+
+Replace Hover nameservers with Cloudflare's. Enable proxying. Configure SSL/TLS
+to Full (Strict). Add page rules for cache control. No code changes required —
+purely infrastructure. Do this before making the site widely known.
+
+** CI/CD pipeline
+
+Replace the manual rsync deploy with a GitHub Actions workflow that triggers on
+push to =main= in the content repo, checks out the code repo with submodules,
+runs =npm run build=, and rsyncs to the server. Requires an SSH deploy key on
+the server.
+
+* Session handoff notes
+
+When starting a new AI session with this plan:
+
+1. Paste this file's contents as context.
+2. State the current phase and its status.
+3. Paste any relevant error output.
+4. Ask for the *next smallest task* within the current phase.
+
+The canonical rule: tests must fail before code is written. If a phase has no
+automated tests, state that explicitly and describe the manual validation steps
+instead.

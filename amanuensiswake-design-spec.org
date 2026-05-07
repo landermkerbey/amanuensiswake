@@ -1,0 +1,299 @@
+#+TITLE: Amanuensis Wake — Design Specification
+#+DATE: 2026-05-07
+#+NOTE: This document captures all visual and structural decisions made during
+#+NOTE: the design session. It is the reference for implementing and verifying
+#+NOTE: the stylesheet and templates. Update it when decisions change.
+
+* Colour palette
+
+| Token              | Light mode       | Dark mode        | Usage                        |
+|--------------------+------------------+------------------+------------------------------|
+| --aw-bg            | #F7F4EF          | #1C1A17          | Page background              |
+| --aw-bg-fallback   | #F5F3EE          | —                | If #F7F4EF reads too yellow  |
+| --aw-ink           | #2A2520          | #EDE8E0          | Body text                    |
+| --aw-muted         | #7A7268          | #9A9186          | Metadata, nav, muted text    |
+| --aw-rule          | rgba(42,37,32,.10) | rgba(237,232,224,.10) | Borders, hr           |
+| --aw-note-bg       | rgba(42,37,32,.045) | rgba(237,232,224,.05) | Notes block background |
+| --aw-note-rule     | rgba(42,37,32,.22) | rgba(237,232,224,.25) | Notes block left border |
+
+Dark mode is implemented via =@media (prefers-color-scheme: dark)= only —
+no manual toggle at this stage.
+
+* Typography
+
+** Typefaces
+
+| Role       | Family                              | Source        |
+|------------+-------------------------------------+---------------|
+| Prose      | Source Serif 4                      | Google Fonts  |
+| CJK        | Noto Serif JP, Noto Serif KR        | Google Fonts  |
+| Monospace  | TBD — decided in syntax-highlight phase |           |
+
+Font stack for body: ='Source Serif 4', 'Noto Serif JP', 'Noto Serif KR', Georgia, serif=
+
+Always set =font-optical-sizing: auto= on elements using Source Serif 4.
+
+** Google Fonts import
+
+#+BEGIN_SRC css
+@import url('https://fonts.googleapis.com/css2?family=Source+Serif+4:ital,opsz,wght@0,8..60,400;0,8..60,600;1,8..60,400;1,8..60,600&family=Noto+Serif+JP:wght@400;600&family=Noto+Serif+KR:wght@400;600&display=swap');
+#+END_SRC
+
+** Scale and rhythm
+
+| Element         | font-size  | font-weight | font-style | line-height | notes                  |
+|-----------------+------------+-------------+------------+-------------+------------------------|
+| Body / prose    | 1.05rem    | 400         | normal     | 1.8         |                        |
+| Site name       | 1.1rem     | 600         | normal     | 1.2         | article pages          |
+| Site name       | 1.35rem    | 600         | normal     | 1.2         | home page              |
+| Byline          | 0.75–0.78rem | 400       | italic     | —           | below site name        |
+| Article title   | 1.6rem     | 600         | normal     | 1.25        | letter-spacing -0.015em |
+| h2 (Part)       | 1.2rem     | 600         | normal     | 1.3         | letter-spacing -0.01em |
+| h3 (Chapter)    | 1rem       | 600         | normal     | 1.4         |                        |
+| h4 (Scene)      | 1rem       | 400         | italic     | 1.4         | no number              |
+| Nav links       | 0.875rem   | 400         | normal     | —           |                        |
+| Dateline        | 0.8rem     | 400         | italic     | —           |                        |
+| Tags            | 0.7rem     | 400         | normal     | —           | letter-spacing 0.02em  |
+| Section label   | 0.7rem     | 400         | normal     | —           | uppercase, letter-spacing 0.1em |
+| Entry title     | 1.05rem    | 600         | normal     | 1.35        |                        |
+| Entry meta/date | 0.78rem    | 400         | italic     | 1.6         | right-aligned          |
+| Entry desc      | 0.875rem   | 400         | italic     | 1.6         |                        |
+| Note item title | 0.875rem   | 400         | italic     | —           |                        |
+| Note item date  | 0.75rem    | 400         | normal     | —           |                        |
+| Note subhead    | 0.8rem     | 400         | italic     | 1.5         |                        |
+| Footer link     | 0.85rem    | 400         | italic     | —           | letter-spacing 0.01em  |
+| Series bar      | 0.8rem     | 400         | italic     | —           |                        |
+| Series label    | 0.72rem    | 400         | normal     | —           | uppercase, letter-spacing 0.05em |
+| Verse block     | 1rem       | 400         | normal     | 1.9         | white-space: pre; overflow-x: auto |
+
+* Layout
+
+** Column
+
+- Max width: 640px
+- Centered via =margin: 0 auto=
+- Side padding: =1rem= (for narrow viewports)
+- Side margins deliberately generous — reserved for future sidenotes
+- Class: =.aw-column= or =.aw-page=
+
+** Spacing
+
+- Header padding top: 2.25rem; padding bottom: 1.25rem
+- Header bottom border: 0.5px solid --aw-rule
+- Header margin-bottom: 2rem (home), 2.5rem (article)
+- Between entries: 1.6rem margin-bottom
+- Between prose paragraphs: 1.4rem margin-bottom
+- Before h2: 2.5rem margin-top
+- Before h3/h4: 2rem margin-top
+- Notes block margin-top: 2.5rem
+- Notes block padding: 1.1rem 1.25rem
+- Series bar padding: 0.6rem 0.9rem
+- Footer margin-top: 3.5rem; padding-top: 1.25rem
+
+* Components
+
+** Site header
+
+Appears on every page. Two variants:
+
+- *Home page*: site name at 1.35rem
+- *Article pages*: site name at 1.1rem (steps back to let article title lead)
+
+Structure:
+#+BEGIN_EXAMPLE
+<header class="aw-site-header">
+  <a class="aw-site-name" href="/">Amanuensis Wake</a>   ← always a home link
+  <p class="aw-byline">Lander M. Kerbey</p>
+  <nav class="aw-nav">
+    <a href="/">Home</a>
+    <a href="/notes/">Notes</a>
+    <a href="/about/">About</a>
+  </nav>
+</header>
+#+END_EXAMPLE
+
+Nav active state: =border-bottom: 1px solid --aw-ink= on the current page link.
+
+** Home page lede
+
+A short blurb rendered from the body of =index.org=. Max-width ~560px (slightly
+narrower than the column) to give it a distinct shape from the entry list below.
+Class: =.aw-lede=. Line-height 1.8.
+
+** Writings index
+
+Section label above the list: uppercase small text, bottom border rule.
+Class: =.aw-section-label=.
+
+Each entry is a two-column grid: date column (5rem, right-aligned, italic) and
+body column (title + optional desc + tags).
+
+#+BEGIN_EXAMPLE
+<div class="aw-entry">
+  <span class="aw-entry-meta">Apr 2025</span>       ← Mon YYYY format
+  <div class="aw-entry-body">
+    <a class="aw-entry-title" href="/slug/">Title</a>
+    <p class="aw-entry-desc">Optional lede sentence.</p>   ← omit if absent
+    <ul class="aw-tags"><li class="aw-tag">essay</li></ul>
+  </div>
+</div>
+#+END_EXAMPLE
+
+Date format in index: abbreviated month + year only (e.g. "Apr 2025"), not full
+date. Full date appears on the article page dateline.
+
+** Tags
+
+Pill-shaped labels. Background =rgba(42,37,32,0.055)=, color =--aw-muted=,
+padding =2px 7px=, border-radius =3px=.
+
+** Notes block
+
+Sits below the writings index on the home page. Visually subordinate — muted
+background, left border rule — but not hidden. Explicitly labelled as process
+material.
+
+#+BEGIN_EXAMPLE
+<div class="aw-notes-block">
+  <p class="aw-note-head">Notes</p>
+  <p class="aw-note-subhead">Unfinished thoughts, open questions, process
+  material. Not intended as finished work — for readers interested in the
+  workshop.</p>
+  <div class="aw-note-item">
+    <a class="aw-note-item-title" href="/slug/">Title</a>
+    <span class="aw-note-item-date">Apr 2025</span>
+  </div>
+  <!-- repeat .aw-note-item -->
+</div>
+#+END_EXAMPLE
+
+Notes block border-left: =2px solid --aw-note-rule=.
+Notes block background: =--aw-note-bg=.
+Note items separated by =0.5px solid --aw-rule= bottom border; last item has no
+border.
+Omit the entire block when there are no notes.
+
+** Article dateline
+
+Sits below =<h1>= and above tags.
+
+- Unrevised: =23 January 2026=
+- Revised: =23 January 2026 · revised 14 March 2026=
+
+Both dates at equal visual weight, separated by a mid-dot (=·=).
+Revised date suppressed when =#+LAST_MODIFIED= is absent or equals =#+DATE=.
+Source keywords: =#+DATE= and =#+LAST_MODIFIED=.
+Class: =.aw-dateline=. Font: 0.8rem italic muted.
+
+** Heading hierarchy (article pages)
+
+| Level | Org   | HTML | Style                          | Numbering      |
+|-------+-------+------+--------------------------------+----------------|
+| Part  | =*=   | h2   | 1.2rem, 600, roman             | Explicit in title: "Part II — …" |
+| Chapter | =**= | h3  | 1rem, 600, roman               | Explicit in title: "3. …"        |
+| Scene | =***= | h4   | 1rem, 400, italic              | None — title only                |
+
+Horizontal rules (=<hr class="aw-rule-el">=) between major sections.
+HR style: =border: none; border-top: 0.5px solid --aw-rule=.
+
+** Verse blocks
+
+Org =#+BEGIN_VERSE= ... =#+END_VERSE= blocks must preserve the author's
+horizontal whitespace as semantic content.
+
+#+BEGIN_EXAMPLE
+<div class="aw-verse">line one
+                indented line
+another line</div>
+#+END_EXAMPLE
+
+CSS:
+#+BEGIN_SRC css
+.aw-verse {
+  white-space: pre;
+  overflow-x: auto;
+  font-family: var(--aw-serif);
+  font-optical-sizing: auto;
+  font-size: 1rem;
+  line-height: 1.9;
+}
+#+END_SRC
+
+Do NOT apply =white-space: pre= to =<p>= elements — only to =.aw-verse= divs.
+
+** Series navigation bar
+
+Appears at the top and bottom of article pages that belong to a series.
+Omitted entirely when no series metadata is present (stub renders nothing).
+
+#+BEGIN_EXAMPLE
+<div class="aw-series-bar">
+  <a href="/prev-slug/">← II. Previous title</a>
+  <span class="aw-series-label">Series name</span>
+  <a href="/next-slug/">IV. Next title →</a>
+</div>
+#+END_EXAMPLE
+
+Layout: =display: flex; justify-content: space-between; align-items: center=.
+Background: =rgba(42,37,32,0.025)=. Border: =0.5px solid --aw-rule=.
+Series label: 0.72rem, uppercase, letter-spacing 0.05em, non-italic.
+Prev/next links: 0.8rem, italic, muted colour.
+Generation of prev/next links from =#+SERIES= and =#+SERIES_ORDER= metadata
+is deferred to a later phase. The template slot exists now.
+
+** Footer
+
+Centered. Single element: site name as italic home link.
+Placeholder for a future colophon symbol — when designed, it replaces or
+accompanies the text. The template should make this a one-element substitution.
+
+#+BEGIN_EXAMPLE
+<footer class="aw-footer">
+  <a href="/">Amanuensis Wake</a>
+</footer>
+#+END_EXAMPLE
+
+CSS: =text-align: center=. Link: 0.85rem italic muted.
+Top border: =0.5px solid --aw-rule=. Margin-top: 3.5rem. Padding-top: 1.5rem.
+
+* Page structure summary
+
+** Home page (index.html)
+
+#+BEGIN_EXAMPLE
+<site-header>          ← site name (1.35rem) + byline + nav
+<main>
+  <lede>               ← rendered from index.org body
+  <section-label>      ← "Writings"
+  <aw-entry> × N       ← reverse-chronological, writings only
+  <aw-notes-block>     ← omitted if no notes
+</main>
+<footer>               ← centered site name link
+#+END_EXAMPLE
+
+** Article page
+
+#+BEGIN_EXAMPLE
+<site-header>          ← site name (1.1rem) + byline + nav
+<main>
+  <series-bar-top>     ← omitted if not in a series
+  <h1>                 ← article title
+  <dateline>           ← published [· revised] date
+  <tags>               ← tag pills
+  <article-body>       ← rendered org content
+  <series-bar-bottom>  ← omitted if not in a series
+</main>
+<footer>               ← centered site name link
+#+END_EXAMPLE
+
+* Deferred design decisions
+
+- *Colophon symbol*: a visual mark for Amanuensis Wake, to replace/accompany
+  the footer text when designed. One-element substitution in the footer template.
+- *Monospace typeface*: decided when syntax highlighting is implemented.
+- *Sidenote layout*: the 640px column with generous margins anticipates this.
+  No CSS changes needed to accommodate sidenotes when that phase arrives,
+  beyond adding the sidenote-specific rules.
+- *Support page*: nav item stub can be added when infrastructure is in place.
+- *Writings page*: deferred until enough content exists to warrant an alternate
+  organisational view (non-chronological, by form or theme).
