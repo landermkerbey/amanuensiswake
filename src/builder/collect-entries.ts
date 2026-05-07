@@ -9,6 +9,7 @@ export interface EntryMeta {
   tags: string[];
   slug: string;
   isNote: boolean;
+  lede: string | null;
 }
 
 function extractKeyword(content: string, keyword: string): string {
@@ -51,8 +52,10 @@ export async function collectEntries(contentDir: string): Promise<EntryMeta[]> {
 
         const slug = relative.replace(/\.org$/, "");
         const isNote = tags.includes("note");
+	const rawLede = extractKeyword(content, "LEDE");
+	const lede = rawLede || null;
 
-        return { title, date, revisedDate, tags, slug, isNote };
+        return { title, date, revisedDate, tags, slug, isNote, lede };
       })
   );
 

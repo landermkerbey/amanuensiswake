@@ -26,6 +26,7 @@ function renderWritingEntry(entry: EntryMeta): string {
       <span class="aw-entry-meta">${meta}</span>
       <div class="aw-entry-body">
         <a class="aw-entry-title" href="/${entry.slug}/">${entry.title}</a>
+	${entry.lede ? `<p class="aw-entry-desc">${entry.lede}</p>` : ""} 
         ${tagsHtml}
       </div>
     </div>`;
