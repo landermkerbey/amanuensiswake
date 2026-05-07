@@ -149,8 +149,7 @@ hr,
 
 .aw-site-header__inner {
   display: flex;
-  align-items: center;
-  justify-content: space-between;
+  align-items: flex-start;
   gap: 1rem;
 }
 

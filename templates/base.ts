@@ -122,7 +122,7 @@ export function baseTemplate({
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>${title} — amanuensiswake</title>
+  <title>${title} — Amanuensis Wake</title>
   <link rel="stylesheet" href="/style.css">
 </head>
 <body>
@@ -130,10 +130,10 @@ export function baseTemplate({
   <header class="${headerClass}">
     <div class="aw-column aw-site-header__inner">
       <div class="aw-site-id">
-        <a class="aw-site-name" href="/">amanuensiswake</a>
+        <a class="aw-site-name" href="/">Amanuensis Wake</a>
         <p class="aw-byline">by Lander M. Kerbey</p>
+        ${renderNav()}
       </div>
-      ${renderNav()}
     </div>
   </header>
 
@@ -144,7 +144,7 @@ export function baseTemplate({
   </main>
 
   <footer class="aw-footer">
-    <a href="/">amanuensiswake</a>
+    <a href="/">Amanuensis Wake</a>
   </footer>
 
 </body>
