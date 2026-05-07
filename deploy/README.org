@@ -110,7 +110,7 @@ git submodule update --recursive
 npm run build
 
 # 4. From your local machine: deploy the new build
-rsync -avz --no-group --delete dist/ \
+rsync -rlz --delete dist/ \
     YOUR_USERNAME@YOUR_SERVER_IP:/var/www/amanuensiswake/dist/
 #+END_SRC
 
